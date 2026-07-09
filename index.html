@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Passport Photo</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <main>
+    <!-- State 1: Spec picker -->
+    <section id="state-pick-spec" class="state" aria-label="Choose photo type" role="region">
+      <h1>My Passport Photo</h1>
+      <p id="state1-note" class="note">guide only — verify against official requirements</p>
+      <div id="preset-buttons" class="preset-grid" role="group" aria-label="Photo preset selection"></div>
+      <button id="start-camera" class="primary">Start Camera</button>
+      <p id="state1-error" class="error" role="alert" aria-live="polite"></p>
+      <p id="https-warning" class="error" role="alert" aria-live="polite"></p>
+    </section>
+
+    <!-- State 2: Live capture -->
+    <section id="state-live" class="state hidden" aria-label="Capture live view" role="region">
+      <div id="camera-container">
+        <video id="video" playsinline muted autoplay tabindex="-1"></video>
+        <div id="overlay" aria-hidden="true">
+          <div id="oval-guide" class="oval" aria-hidden="true"></div>
+          <p id="framing-hint" class="framing-hint"></p>
+        </div>
+      </div>
+      <div class="live-controls">
+        <button id="btn-capture" class="primary" aria-label="Capture photo">◉ Capture</button>
+        <button id="btn-switch-camera" aria-label="Switch front/back camera">↻ Switch</button>
+        <button id="btn-cancel-live">Cancel</button>
+      </div>
+      <div id="segmenter-status" aria-live="polite" class="note"></div>
+    </section>
+
+    <!-- State 3: Preview + Download -->
+    <section id="state-preview" class="state hidden" aria-label="Photo preview" role="region">
+      <div id="preview-processing" class="processing-overlay hidden" aria-live="polite">
+        <p>Processing…</p>
+      </div>
+      <div id="preview-content" class="preview-layout">
+        <div class="preview-single" role="img" aria-label="Your passport photo preview">
+          <canvas id="preview-canvas-single"></canvas>
+        </div>
+        <div class="preview-sheet" role="img" aria-label="4R print sheet layout preview">
+          <canvas id="preview-canvas-sheet"></canvas>
+        </div>
+      </div>
+      <p id="bg-unavailable-banner" class="warning hidden" role="alert">
+        Background replacement unavailable — using original background.
+      </p>
+      <div class="preview-controls">
+        <button id="btn-download-single" class="primary">Download Photo</button>
+        <button id="btn-download-sheet">Download 4R Sheet</button>
+        <button id="btn-retake">Retake</button>
+        <button id="btn-new-preset">New Preset</button>
+      </div>
+    </section>
+  </main>
+
+  <div id="status-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
