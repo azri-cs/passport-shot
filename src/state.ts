@@ -69,6 +69,7 @@ export interface FSM {
   capture(): Promise<void>;
   retake(): Promise<void>;
   newPreset(): void;
+  destroy(): void;
   downloadSingle(): Promise<boolean>;
   downloadSheet(): Promise<boolean>;
 }
@@ -103,11 +104,10 @@ export function createFSM(render: (state: AppState) => void): FSM {
 
   // ── Cleanup helpers ────────────────────────────────────────────────────
 
-  function stopCameraAndSegmenter(): void {
+  /** Stop the camera without touching the segmenter (which is session-scoped) */
+  function stopCamera(): void {
     state.camera?.stop();
     state.camera = null;
-    state.segmenter?.destroy();
-    state.segmenter = null;
   }
 
   function releaseCaptures(): void {
@@ -116,6 +116,19 @@ export function createFSM(render: (state: AppState) => void): FSM {
     state.lastSensorRect = null;
     state.lastContainerRect = null;
     state.lastSpec = null;
+  }
+
+  /**
+   * Get the session-scoped segmenter, creating it on first use.
+   * The worker + ML model are expensive to load, so they are reused across
+   * retakes and camera starts and only released on destroy().
+   */
+  function getSegmenter(): SegmenterClient {
+    if (!state.segmenter) {
+      const segmenter = createSegmenterClient();
+      state = { ...state, segmenter };
+    }
+    return state.segmenter!;
   }
 
   // ── Transitions ─────────────────────────────────────────────────────────
@@ -129,7 +142,7 @@ export function createFSM(render: (state: AppState) => void): FSM {
 
   async function startCamera(): Promise<void> {
     const preset = getPopulatedPreset();
-    state = { ...state, name: "live", bgUnavailable: false, camera: null, segmenter: null };
+    state = { ...state, name: "live", camera: null };
 
     // Set up camera container aspect ratio
     const container = getContainerElement();
@@ -144,25 +157,28 @@ export function createFSM(render: (state: AppState) => void): FSM {
     state = { ...state, camera };
     notify();
 
-    // Create segmenter client and start init in parallel with camera
-    const segmenter = createSegmenterClient();
-    state = { ...state, segmenter };
-    notify();
+    // Get (or lazily create) the session-scoped segmenter. Its model is
+    // loaded once per session and reused across retakes and camera starts.
+    const segmenter = getSegmenter();
 
-    // Start camera and segmenter init in parallel
+    // Start the camera; the segmenter may already be initialized (retake,
+    // second camera start), in which case init() resolves immediately.
     try {
       await Promise.all([
         camera.start(),
-        segmenter.init(),
+        segmenter.init().catch((err) => {
+          // Model load failure: continue with the camera and mark BG
+          // replacement unavailable rather than aborting the capture flow.
+          console.error("Segmenter init failed:", err);
+          state = { ...state, bgUnavailable: true };
+        }),
       ]);
     } catch (err: any) {
       camera.stop();
-      segmenter.destroy();
       state = {
         ...state,
         name: "pick-spec",
         camera: null,
-        segmenter: null,
       };
 
       // Determine error message
@@ -183,21 +199,24 @@ export function createFSM(render: (state: AppState) => void): FSM {
     if (existingVideo) existingVideo.remove();
     container.prepend(camera.video);
 
-    // Run warmup gate (after init, before user can capture)
-    try {
-      const warmupResult = await segmenter.warmup();
-      if (warmupResult === "unavailable") {
+    // Run warmup gate once per session (after init, before user can capture).
+    // If the segmenter was already warmed up this session, skip it.
+    if (state.segmenter && !state.bgUnavailable) {
+      try {
+        const warmupResult = await segmenter.warmup();
+        if (warmupResult === "unavailable") {
+          state = { ...state, bgUnavailable: true };
+          document.getElementById("segmenter-status")!.textContent =
+            "Background replacement unavailable — using original background.";
+        } else {
+          document.getElementById("segmenter-status")!.textContent = "";
+        }
+      } catch {
+        // Warmup failed — mark as unavailable, keep going
         state = { ...state, bgUnavailable: true };
         document.getElementById("segmenter-status")!.textContent =
           "Background replacement unavailable — using original background.";
-      } else {
-        document.getElementById("segmenter-status")!.textContent = "";
       }
-    } catch {
-      // Warmup failed — mark as unavailable, keep going
-      state = { ...state, bgUnavailable: true };
-      document.getElementById("segmenter-status")!.textContent =
-        "Background replacement unavailable — using original background.";
     }
 
     notify();
@@ -290,9 +309,11 @@ export function createFSM(render: (state: AppState) => void): FSM {
   }
 
   async function retake(): Promise<void> {
-    stopCameraAndSegmenter();
+    // Stop the camera but keep the segmenter (worker + model) alive so the
+    // next capture doesn't reload the model.
+    stopCamera();
     releaseCaptures();
-    state = { ...state, name: "pick-spec", bgUnavailable: false };
+    state = { ...state, name: "pick-spec" };
     notify();
 
     // Re-enter live state
@@ -300,10 +321,17 @@ export function createFSM(render: (state: AppState) => void): FSM {
   }
 
   function newPreset(): void {
-    stopCameraAndSegmenter();
+    stopCamera();
     releaseCaptures();
     state = { ...state, name: "pick-spec", bgUnavailable: false, lastSpec: null };
     notify();
+  }
+
+  /** Full teardown: camera + segmenter worker. Only called on page unload. */
+  function destroy(): void {
+    stopCamera();
+    state.segmenter?.destroy();
+    state.segmenter = null;
   }
 
   async function downloadSingle(): Promise<boolean> {
@@ -335,6 +363,7 @@ export function createFSM(render: (state: AppState) => void): FSM {
     capture,
     retake,
     newPreset,
+    destroy,
     downloadSingle,
     downloadSheet,
   };

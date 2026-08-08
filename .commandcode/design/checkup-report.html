@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>My Passport Photo - Checkup Report</title>
+	<script src="https://cdn.tailwindcss.com"></script>
+	<style>
+		body { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+		.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+		.report-section { border: 1px solid #222226; background: #0a0a0b; position: relative; }
+		.corner-box { position: absolute; width: 20px; height: 20px; border: 1px solid #222226; background: #000; }
+	</style>
+</head>
+<body class="bg-black text-[#fafafa]">
+	<main class="mx-auto w-full max-w-6xl px-5 py-8 md:px-10 md:py-12">
+		<header class="report-section mb-8 p-6 md:p-8">
+			<div class="corner-box left-0 top-0 -translate-x-1/2 -translate-y-1/2"></div>
+			<div class="corner-box right-0 top-0 translate-x-1/2 -translate-y-1/2"></div>
+			<div class="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+				<div>
+					<div class="mono mb-2 text-xs tracking-widest text-[#666]">// CHECKUP</div>
+					<h1 class="text-4xl font-bold tracking-tight md:text-6xl">My Passport Photo</h1>
+				</div>
+				<div class="mono text-left text-xs text-[#666] md:text-right">
+					<div>COMMANDCODE REPORT</div>
+					<div class="text-[#444]">2026-08-08</div>
+				</div>
+			</div>
+		</header>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="corner-box left-0 top-0 -translate-x-1/2 -translate-y-1/2"></div>
+			<div class="corner-box right-0 top-0 translate-x-1/2 -translate-y-1/2"></div>
+			<div class="grid gap-8 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+				<div>
+					<div class="mono mb-2 text-xs tracking-widest text-[#666]">// OVERALL</div>
+					<div class="text-6xl font-bold tracking-tight md:text-7xl">34</div>
+					<div class="mt-1 text-lg text-[#666]">/ 60</div>
+					<div class="mt-4 inline-flex border border-[#fbbf24]/30 bg-[#fbbf24]/10 px-3 py-1 text-sm text-[#fbbf24]">FIX BEFORE SHIPPING</div>
+				</div>
+				<div>
+					<div class="mono mb-3 text-xs tracking-widest text-[#666]">// TL;DR</div>
+					<p class="text-sm leading-6 text-[#a0a0a0]">The bones are honest and well-built: a clean FSM, privacy-first architecture, pure-function image pipeline, and a real oval-crop contract. The surface fails on three concrete wiring defects: no visible preset selection, no capture-error feedback, and an un-hideable warning banner.</p>
+					<p class="mt-4 text-sm leading-6 text-[#fbbf24]">PRIMARY RECOMMENDATION: Run /design refine and /design interaction to fix the missing selected state, error surfacing, and banner visibility, plus a small CSS fix. These are wiring fixes, not a redesign.</p>
+				</div>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// HEURISTIC SCORES</div>
+			<div class="overflow-x-auto">
+				<table class="w-full min-w-[720px] border-collapse text-sm">
+					<thead>
+						<tr class="border-b border-[#222226] text-left mono text-xs text-[#666]">
+							<th class="py-3 pr-4 font-normal">#</th>
+							<th class="py-3 pr-4 font-normal">VITAL</th>
+							<th class="py-3 pr-4 font-normal">SCORE</th>
+							<th class="py-3 font-normal">KEY FINDING</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#555]">1</td>
+							<td class="py-4 pr-4 text-[#fafafa]">Intentionality</td>
+							<td class="py-4 pr-4 text-[#fbbf24]">5 / 10</td>
+							<td class="py-4 text-[#a0a0a0]">Sound 3-state composition, but generic blue-on-white default styling with no chosen character.</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#555]">2</td>
+							<td class="py-4 pr-4 text-[#fafafa]">Readability</td>
+							<td class="py-4 pr-4 text-[#34d399]">10 / 10</td>
+							<td class="py-4 text-[#a0a0a0]">Clear hierarchy, strong contrast, no overflow at 375px or 1280px, labels always visible.</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#555]">3</td>
+							<td class="py-4 pr-4 text-[#fafafa]">Usability</td>
+							<td class="py-4 pr-4 text-[#ef4444]">0 / 10</td>
+							<td class="py-4 text-[#a0a0a0]">Capture failures are console-only; no visible preset selection; banner never hides.</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#555]">4</td>
+							<td class="py-4 pr-4 text-[#fafafa]">Responsiveness</td>
+							<td class="py-4 pr-4 text-[#fbbf24]">5 / 10</td>
+							<td class="py-4 text-[#a0a0a0]">375/1280 clean; live/preview states unverified without a real camera; 1rem inputs (no iOS zoom).</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#555]">5</td>
+							<td class="py-4 pr-4 text-[#fafafa]">Speed</td>
+							<td class="py-4 pr-4 text-[#fbbf24]">5 / 10</td>
+							<td class="py-4 text-[#a0a0a0]">~10MB CDN model/wasm loads on the capture path with no loading UI; worker keeps main thread free.</td>
+						</tr>
+						<tr class="border-b border-[#1a1a1e]">
+							<td class="py-4 pr-4 text-[#555]">6</td>
+							<td class="py-4 pr-4 text-[#fafafa]">Accessibility</td>
+							<td class="py-4 pr-4 text-[#ef4444]">0 / 10</td>
+							<td class="py-4 text-[#a0a0a0]">Selected-state CSS targets aria-pressed while JS sets aria-checked; live-state errors not announced.</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// COGNITIVE LOAD / RISK</div>
+			<div class="grid gap-6 md:grid-cols-2">
+				<div>
+					<div class="mb-3 text-xl font-semibold">MODERATE</div>
+					<ul class="space-y-3 text-sm text-[#a0a0a0]">
+						<li><span class="mono mr-2 text-[#34d399]">PASS</span>Oval guide is a real domain artifact; crop contract is architecture, not decoration</li>
+						<li><span class="mono mr-2 text-[#34d399]">PASS</span>Privacy architecture: all processing in-browser, CSP enforced, no data leaves device</li>
+						<li><span class="mono mr-2 text-[#34d399]">PASS</span>Strong focus ring, sr-only announcer, keyboard path (Esc returns from live)</li>
+						<li><span class="mono mr-2 text-[#fbbf24]">WATCH</span>~10MB model load on the capture path with no progress feedback</li>
+						<li><span class="mono mr-2 text-[#ef4444]">FAIL</span>Preset selection invisible to sighted users (aria-pressed vs aria-checked mismatch)</li>
+						<li><span class="mono mr-2 text-[#ef4444]">FAIL</span>Capture errors swallowed into console; user stuck in live state with no message</li>
+						<li><span class="mono mr-2 text-[#ef4444]">FAIL</span>bg-unavailable banner has no CSS rule to ever hide it</li>
+					</ul>
+				</div>
+				<div>
+					<div class="mono mb-3 text-xs tracking-widest text-[#666]">// NEXT MODES</div>
+					<div class="flex flex-wrap gap-2">
+						<span class="border border-[#333] px-3 py-1 text-sm text-[#a0a0a0]">/design refine</span>
+						<span class="border border-[#333] px-3 py-1 text-sm text-[#a0a0a0]">/design interaction</span>
+						<span class="border border-[#333] px-3 py-1 text-sm text-[#a0a0a0]">/design recolor</span>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// WHAT'S WORKING</div>
+			<div class="grid gap-4 md:grid-cols-3">
+				<article class="border border-[#1f1f24] p-4">
+					<h2 class="mb-2 text-sm font-semibold">Explicit FSM</h2>
+					<p class="text-sm leading-6 text-[#a0a0a0]">3-state machine owns all cleanup: camera stop, stream release, URL revocation. Transitions are the only place state mutates.</p>
+				</article>
+				<article class="border border-[#1f1f24] p-4">
+					<h2 class="mb-2 text-sm font-semibold">Pure-function pipeline</h2>
+					<p class="text-sm leading-6 text-[#a0a0a0]">Mask processing, geometric crop, and 4R tiling are pure and unit-tested. GPU-to-CPU fallback is sensible.</p>
+				</article>
+				<article class="border border-[#1f1f24] p-4">
+					<h2 class="mb-2 text-sm font-semibold">Accessibility groundwork</h2>
+					<p class="text-sm leading-6 text-[#a0a0a0]">Live regions, role=alert on camera errors, sr-only announcer, prefers-reduced-motion handled, 1rem inputs avoid iOS zoom.</p>
+				</article>
+			</div>
+		</section>
+
+		<section class="report-section mb-8 p-6 md:p-8">
+			<div class="mono mb-6 text-xs tracking-widest text-[#666]">// PRIORITY ISSUES</div>
+			<div class="space-y-5">
+				<article class="border border-[#2a1d22] bg-[#110b0d] p-5">
+					<div class="mono mb-2 text-xs text-[#f43f5e]">P0</div>
+					<h2 class="mb-2 text-lg font-semibold">Preset selection is invisible</h2>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">JS sets aria-checked on the preset radio buttons, but style.css:23 targets aria-pressed="true", which never matches. The selected preset looks identical to the unselected one. Sighted users cannot tell which spec is armed before pressing Start Camera.</p>
+					<div class="border-l border-[#fbbf24] pl-4 text-sm leading-6 text-[#fbbf24]">FIX: Change the CSS selector to button[aria-checked="true"] (and align the hover/focus treatment), or switch the JS to aria-pressed. One line plus a state color.</div>
+				</article>
+				<article class="border border-[#2a1d22] bg-[#110b0d] p-5">
+					<div class="mono mb-2 text-xs text-[#f43f5e]">P0</div>
+					<h2 class="mb-2 text-lg font-semibold">Capture errors are swallowed</h2>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">main.ts btnCapture handler catches the error and only console.errors it. If capture fails (e.g., camera dies mid-session), the user sees nothing and is stuck in the live state with a dead camera. classifyCameraError returns canRetry which is never used.</p>
+					<div class="border-l border-[#fbbf24] pl-4 text-sm leading-6 text-[#fbbf24]">FIX: Surface the capture error in a visible role=alert live region in the live state, and offer a retry affordance using the existing canRetry flag.</div>
+				</article>
+				<article class="border border-[#2a1d22] bg-[#110b0d] p-5">
+					<div class="mono mb-2 text-xs text-[#f43f5e]">P1</div>
+					<h2 class="mb-2 text-lg font-semibold">Warning banner can never hide</h2>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">main.ts toggles .hidden on bg-unavailable-banner, but no CSS rule defines .hidden for it (only .state.hidden and .processing-overlay.hidden exist). When background replacement is unavailable, the banner is permanently visible in the preview.</p>
+					<div class="border-l border-[#fbbf24] pl-4 text-sm leading-6 text-[#fbbf24]">FIX: Add a bare .hidden { display: none; } rule, or scope it to the banner.</div>
+				</article>
+				<article class="border border-[#2a1d22] bg-[#110b0d] p-5">
+					<div class="mono mb-2 text-xs text-[#f43f5e]">P1</div>
+					<h2 class="mb-2 text-lg font-semibold">No feedback during camera/model start</h2>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">Start Camera disables the button but shows no progress while getUserMedia and the ~10MB model load run. On a cold connection this is a multi-second frozen screen with no indication of work.</p>
+					<div class="border-l border-[#fbbf24] pl-4 text-sm leading-6 text-[#fbbf24]">FIX: Add a "Preparing camera..." state on the primary button or a thin progress region, and consider preconnect to the two CDN origins.</div>
+				</article>
+				<article class="border border-[#2a1d22] bg-[#110b0d] p-5">
+					<div class="mono mb-2 text-xs text-[#f43f5e]">P2</div>
+					<h2 class="mb-2 text-lg font-semibold">Unmarked visual identity</h2>
+					<p class="mb-4 text-sm leading-6 text-[#a0a0a0]">The generic #2563eb blue and near-white canvas carry no chosen character for a photo tool. Nothing looks wrong, but nothing looks decided either.</p>
+					<div class="border-l border-[#fbbf24] pl-4 text-sm leading-6 text-[#fbbf24]">FIX: A /design recolor + /design refine pass: pick a hue with a reason (photo/document context), build a real scale, and give the primary action a considered shape.</div>
+				</article>
+			</div>
+		</section>
+
+		<footer class="mono py-8 text-center text-xs tracking-widest text-[#444]">
+			Generated with CommandCode - 2026-08-08
+		</footer>
+	</main>
+</body>
+</html>

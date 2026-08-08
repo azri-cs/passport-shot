@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(ls node_modules | grep -iE \"playwright|puppeteer|chrom\" ; which chromium chromium-browser google-chrome 2>/dev/null; echo \"---\"; ls public docs)",
+      "Shell(npx vite --port 5199 --strictPort > /tmp/vite-checkup.log 2>&1 & echo \"started\")",
+      "Shell(curl -s -o /dev/null -w %{http_code} http://localhost:5199/)",
+      "Shell(curl -s http://localhost:5199/src/main.ts)",
+      "Shell(npx playwright --version 2>&1; echo \"---\"; ls ~/.cache/ms-playwright 2>/dev/null || echo \"no cache\"; echo \"---\"; npx playwright install --dry-run 2>&1 | head -20)",
+      "Shell(npx playwright test 2 >& 1)",
+      "Shell(rm:*)",
+      "Shell(git:*)"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

@@ -1,0 +1,5 @@
+# Taste
+
+- Prefers design checkups to exercise every app state at runtime (including camera/live states via headless browser with fake-device media flags) rather than leaving states "unverified" based on source inspection alone — asked to set up Playwright right after a checkup flagged that live/preview states couldn't be rendered headlessly, then followed through with the full install and setup. Confidence: 0.8
+- Prefers to run install/system-level commands (npm install, npx playwright install, install-deps) themselves rather than having the agent run them, then hands off to the agent to continue the setup from there ("I've run all commands... Proceed next"). Confidence: 0.5
+- Treats slow or fragile behavior caused by tearing down and re-initializing expensive resources on every user action (e.g., reloading the MediaPipe model on each retake/camera restart) as a bug to fix — prefers keeping such resources alive as session-scoped singletons reused across retakes and camera starts, released only on full teardown (page unload). Confidence: 0.7

@@ -136,8 +136,10 @@ function renderPreview(state: AppState): void {
       sheetCtx.drawImage(sheetCanvas, 0, 0);
     }
 
-    // Update aria-label
-    dom.previewSingle.setAttribute(
+    // Update the accessible label on the role="img" container (the canvas
+    // itself is a rendering surface, not the labelled region)
+    const previewContainer = document.querySelector<HTMLElement>(".preview-single");
+    previewContainer?.setAttribute(
       "aria-label",
       `Your ${state.lastSpec?.label ?? "passport"} photo with ${state.bgUnavailable ? "original" : "white"} background`,
     );
@@ -249,6 +251,11 @@ function wireEvents(fsm: ReturnType<typeof createFSM>): void {
       }
     }
   });
+
+  // Full teardown on unload: camera + segmenter worker
+  window.addEventListener("pagehide", () => {
+    fsm.destroy();
+  });
 }
 
 // ── Bootstrap ────────────────────────────────────────────────────────────
@@ -264,3 +271,13 @@ wireEvents(fsm);
 // Select the first preset by default
 const defaultPreset = PRESETS[0].id;
 fsm.selectPreset(defaultPreset);
+// Mark the default preset's radio as checked in the DOM. The preset buttons
+// are built lazily in renderPickSpec (before this runs), and their checked
+// state is only updated on click — so the initial render never reflects the
+// default selection.
+const defaultButton = dom.presetButtons.querySelector<HTMLButtonElement>(
+  `[data-preset-id="${defaultPreset}"]`,
+);
+if (defaultButton) {
+  defaultButton.setAttribute("aria-checked", "true");
+}
