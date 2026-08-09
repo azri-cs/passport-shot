@@ -25,17 +25,16 @@ before the first byte of HTML parses — maximally robust enforcement of ADR 000
 
 **Ship the full baseline security-header set** in the nginx config:
 
-- `Content-Security-Policy` — per ADR 0005 / Q34 (amended for MediaPipe model
-  host): `default-src 'none'`; `script-src` allow `'self'` + `https://cdn.jsdelivr.net`
-  (JS glue + wasm); `connect-src` allow `'self'` + `https://cdn.jsdelivr.net`
-  (wasm/JS fetch) + `https://storage.googleapis.com` (`.tflite` model);
-  `img-src 'self' blob:`; `worker-src 'self' blob:`; `style-src 'self'`;
-  `frame-ancestors 'none'`.
+- `Content-Security-Policy` — per ADR 0005 / Q34 (amended for the vendored
+  MediaPipe): `default-src 'none'`; `script-src` allow `'self' 'wasm-unsafe-eval'`
+  (vendored JS glue + wasm; `wasm-unsafe-eval` is required to compile wasm under
+  CSP); `connect-src` allow `'self'` + `https://storage.googleapis.com`
+  (`.tflite` model); `img-src 'self' blob:`; `worker-src 'self' blob:`;
+  `style-src 'self'`; `frame-ancestors 'none'`.
 - `Strict-Transport-Security: max-age=31536000; includeSubDomains` — **without
   `preload`** (keeps the domain portable for an MVP).
 - `X-Content-Type-Options: nosniff`.
-- `Referrer-Policy: no-referrer` — strongest; leaks nothing to the CDN on
-  MediaPipe fetches.
+- `Referrer-Policy: no-referrer` — strongest; leaks nothing on the model fetch.
 - `X-Frame-Options: DENY` (defense in depth alongside CSP `frame-ancestors`) —
   prevents camera-permission clickjacking.
 - `Permissions-Policy: camera=(self), microphone=(), geolocation=(), ...` —

@@ -4,8 +4,9 @@ import { test, expect } from "@playwright/test";
  * E2E walkthrough of the three FSM states with a fake webcam:
  *   pick-spec → live → preview.
  *
- * The MediaPipe model is fetched from jsdelivr at camera start; these tests
- * require network access to that CDN. In headless the warmup gate may report
+ * The MediaPipe library is vendored same-origin; the selfie-segmenter model
+ * is fetched from Google's model host at camera start. These tests require
+ * network access to that host. In headless the warmup gate may report
  * background replacement as unavailable (no GPU) — the app falls back to the
  * original background, which the preview test asserts.
  *
@@ -145,19 +146,24 @@ test("retake returns to the live state without reloading the model", async ({ pa
 test("retake does not re-fetch the MediaPipe model", async ({ page }) => {
   await page.goto("/");
 
-  // Count fetches to the model/CDN endpoints
+  // Count fetches to the model endpoint (the library is vendored same-origin,
+  // only the selfie-segmenter model is fetched from Google's model host)
   const modelRequests: string[] = [];
   page.on("request", (req) => {
     const url = req.url();
-    if (url.includes("selfie_segmenter") || url.includes("tasks-vision")) {
+    if (url.includes("selfie_segmenter")) {
       modelRequests.push(url);
     }
   });
 
   await page.getByRole("button", { name: "Start Camera" }).click();
   await expect(page.locator("#state-live")).toBeVisible({ timeout: 30_000 });
+
+  // The model fetch is async — wait for the first request before counting.
+  await expect
+    .poll(() => modelRequests.length, { timeout: 30_000 })
+    .toBeGreaterThan(0);
   const firstLoad = modelRequests.length;
-  expect(firstLoad).toBeGreaterThan(0);
 
   await page.getByRole("button", { name: "Capture photo" }).click();
   await expect(page.locator("#state-preview")).toBeVisible({ timeout: 30_000 });

@@ -1,16 +1,50 @@
 /**
- * Main-thread client for the MediaPipe segmenter Web Worker.
+ * Main-thread segmenter client.
  *
- * Provides a typed Promise-based API around the worker's message protocol.
- * The worker is created on `init()` and shut down when no longer needed.
+ * MediaPipe Tasks (vision_bundle) must run on the main thread: its wasm glue
+ * loader needs `importScripts`/`document` which module workers lack, and
+ * cross-origin `import()` from a module worker is blocked by the browser.
+ * The library is vendored locally (public/vendor/mediapipe) so it loads from
+ * the same origin.
+ *
+ * The heavy per-pixel mask math (upscale → erode → feather → composite) runs
+ * in a Web Worker to keep the UI thread responsive.
  */
 
 export type SegmenterState = "uninitialized" | "loading" | "ready" | "error";
 export type WarmupResult = "ok" | "unavailable";
 
-function createWorker(): Worker {
+// Vendored MediaPipe Tasks (same-origin). `FilesetResolver` / `ImageSegmenter`
+// are imported lazily so the 130 KB library isn't loaded unless needed.
+let FilesetResolver: any = null;
+let ImageSegmenter: any = null;
+
+async function ensureLibraryLoaded(): Promise<void> {
+  if (FilesetResolver && ImageSegmenter) return;
+  // Vendored in public/ and served same-origin at /vendor/mediapipe/...
+  // Vite forbids statically importing JS from public/, so we fetch the module
+  // text at runtime and import it from a Blob URL. Works in dev and prod.
+  const VENDOR_URL = "/vendor/mediapipe/vision_bundle.mjs";
+  const res = await fetch(VENDOR_URL);
+  if (!res.ok) throw new Error(`Failed to load ${VENDOR_URL}: HTTP ${res.status}`);
+  const code = await res.text();
+  const blobUrl = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
+  try {
+    const mod: any = await import(blobUrl);
+    FilesetResolver = mod.FilesetResolver;
+    ImageSegmenter = mod.ImageSegmenter;
+  } finally {
+    URL.revokeObjectURL(blobUrl);
+  }
+}
+
+const WASM_DIR = "/vendor/mediapipe";
+const MODEL_URL =
+  "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite";
+
+function createMaskWorker(): Worker {
   return new Worker(
-    new URL("./segmenter.worker.ts", import.meta.url),
+    new URL("./mask.worker.ts", import.meta.url),
     { type: "module" },
   );
 }
@@ -30,7 +64,6 @@ export interface SegmenterClient {
 
   /**
    * Segment an ImageData and return the composited (white-background) result.
-   * The input ImageData is transferred to the worker (zero-copy).
    */
   segment(src: ImageData): Promise<ImageData>;
 
@@ -43,13 +76,12 @@ export interface SegmenterClient {
 
 export function createSegmenterClient(): SegmenterClient {
   let worker: Worker | null = null;
+  let segmenter: any = null;
   let state: SegmenterState = "uninitialized";
-  let messageId = 0;
   let errorInfo: { kind: string; message: string } | null = null;
 
   // Pending promises keyed by message type (there's at most one of each in flight)
   let pendingInit: { resolve: () => void; reject: (err: Error) => void } | null = null;
-  let pendingWarmup: { resolve: (r: WarmupResult) => void; reject: (err: Error) => void } | null = null;
   let pendingSegment: { resolve: (r: ImageData) => void; reject: (err: Error) => void } | null = null;
 
   function handleMessage(e: MessageEvent): void {
@@ -60,17 +92,6 @@ export function createSegmenterClient(): SegmenterClient {
         state = "ready";
         pendingInit?.resolve();
         pendingInit = null;
-        break;
-
-      case "warmup-ok":
-        pendingWarmup?.resolve("ok");
-        pendingWarmup = null;
-        break;
-
-      case "warmup-fail":
-        state = "ready"; // model is loaded, just won't produce good results
-        pendingWarmup?.resolve("unavailable");
-        pendingWarmup = null;
         break;
 
       case "result":
@@ -89,28 +110,17 @@ export function createSegmenterClient(): SegmenterClient {
         const info = { kind: kind ?? "unknown", message: message ?? "Unknown error" };
         errorInfo = info;
 
-        if (type === "init" && pendingInit) {
-          // For init failures, classify based on kind
-          if (kind === "execution") {
-            state = "error";
-            pendingInit.reject(
-              new Error(
-                "This device or browser can't run the AI model. " +
-                "Try a modern Chromium, Firefox, or Safari browser.",
-              ),
-            );
-          } else {
-            state = "error";
-            pendingInit.reject(
-              new Error(
-                "Couldn't load the AI model — check your internet connection.",
-              ),
-            );
-          }
+        if (pendingInit) {
+          state = "error";
+          pendingInit.reject(
+            new Error(
+              kind === "execution"
+                ? "This device or browser can't run the AI model. " +
+                  "Try a modern Chromium, Firefox, or Safari browser."
+                : "Couldn't load the AI model — check your internet connection.",
+            ),
+          );
           pendingInit = null;
-        } else if (pendingWarmup) {
-          pendingWarmup.reject(new Error(info.message));
-          pendingWarmup = null;
         } else if (pendingSegment) {
           pendingSegment.reject(new Error(info.message));
           pendingSegment = null;
@@ -123,13 +133,22 @@ export function createSegmenterClient(): SegmenterClient {
     errorInfo = { kind: "worker-error", message: err.message ?? "Worker crashed" };
     state = "error";
 
-    // Reject any pending promise
     pendingInit?.reject(new Error("Worker crashed during init"));
     pendingInit = null;
-    pendingWarmup?.reject(new Error("Worker crashed during warmup"));
-    pendingWarmup = null;
     pendingSegment?.reject(new Error("Worker crashed during segmentation"));
     pendingSegment = null;
+  }
+
+  function segmentToMask(
+    image: ImageData,
+  ): { mask: Float32Array; width: number; height: number } {
+    const result = segmenter.segment(image);
+    const mpmMask = result.confidenceMasks[0];
+    return {
+      mask: mpmMask.getAsFloat32Array(),
+      width: mpmMask.width,
+      height: mpmMask.height,
+    };
   }
 
   return {
@@ -140,46 +159,85 @@ export function createSegmenterClient(): SegmenterClient {
       if (state === "ready") return; // already initialized
 
       state = "loading";
-      worker = createWorker();
-      worker.onmessage = handleMessage;
-      worker.onerror = handleError as any;
+      try {
+        await ensureLibraryLoaded();
+        const vision = await FilesetResolver.forVisionTasks(WASM_DIR);
 
-      return new Promise((resolve, reject) => {
-        pendingInit = { resolve, reject };
-        worker!.postMessage({ type: "init" });
-      });
+        // Try GPU first, fall back to CPU
+        try {
+          segmenter = await ImageSegmenter.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: MODEL_URL,
+              delegate: "GPU",
+            },
+            runningMode: "IMAGE",
+            outputCategoryMask: false,
+            outputConfidenceMasks: true,
+          });
+        } catch {
+          segmenter = await ImageSegmenter.createFromOptions(vision, {
+            baseOptions: {
+              modelAssetPath: MODEL_URL,
+              delegate: "CPU",
+            },
+            runningMode: "IMAGE",
+            outputCategoryMask: false,
+            outputConfidenceMasks: true,
+          });
+        }
+
+        // Start the mask-processing worker
+        worker = createMaskWorker();
+        worker.onmessage = handleMessage;
+        worker.onerror = handleError as any;
+        state = "ready";
+      } catch (err: any) {
+        state = "error";
+        errorInfo = {
+          kind: "load",
+          message: String(err?.message ?? err),
+        };
+        throw new Error(
+          "Couldn't load the AI model — check your internet connection.",
+        );
+      }
     },
 
     async warmup(): Promise<WarmupResult> {
-      if (!worker || state !== "ready") {
+      if (!segmenter || state !== "ready") {
         throw new Error("Segmenter not initialized");
       }
-      return new Promise((resolve, reject) => {
-        pendingWarmup = { resolve, reject };
-        worker!.postMessage({ type: "warmup" });
-      });
+      try {
+        const dummy = new ImageData(64, 64);
+        segmenter.segment(dummy);
+        return "ok";
+      } catch {
+        return "unavailable";
+      }
     },
 
     async segment(src: ImageData): Promise<ImageData> {
-      if (!worker || state !== "ready") {
+      if (!segmenter || !worker || state !== "ready") {
         throw new Error("Segmenter not initialized");
       }
-      messageId++;
 
+      // 1. Run MediaPipe on the main thread → raw confidence mask
+      const { mask, width: mw, height: mh } = segmentToMask(src);
+
+      // 2. Send raw mask to the worker for upscale → erode → feather → composite
       return new Promise((resolve, reject) => {
         pendingSegment = { resolve, reject };
-
-        // Transfer the underlying buffer for zero-copy
-        const transferable = [src.data.buffer as ArrayBuffer];
         worker!.postMessage(
           {
-            type: "segment",
-            id: messageId,
+            type: "process",
+            mask,
+            maskWidth: mw,
+            maskHeight: mh,
             imagedata: { data: src.data, width: src.width, height: src.height },
             width: src.width,
             height: src.height,
           },
-          transferable,
+          [mask.buffer, src.data.buffer],
         );
       });
     },
@@ -187,13 +245,11 @@ export function createSegmenterClient(): SegmenterClient {
     destroy(): void {
       worker?.terminate();
       worker = null;
+      segmenter = null;
       state = "uninitialized";
 
-      // Reject all pending promises
       pendingInit?.reject(new Error("Segmenter destroyed"));
       pendingInit = null;
-      pendingWarmup?.reject(new Error("Segmenter destroyed"));
-      pendingWarmup = null;
       pendingSegment?.reject(new Error("Segmenter destroyed"));
       pendingSegment = null;
       errorInfo = null;

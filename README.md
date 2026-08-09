@@ -100,17 +100,19 @@ into `dist/`. No server config to maintain.
 
 Built with:
 - **Vite** + **TypeScript** — no framework, no runtime dependencies beyond
-  the CDN-loaded MediaPipe library.
+  the vendored MediaPipe library.
 - **MediaPipe Tasks Vision** (`@mediapipe/tasks-vision@0.10.34`) — selfie
-  segmentation in a Web Worker.
+  segmentation. The library is vendored in `public/vendor/mediapipe/` (served
+  same-origin); only the ML model is fetched from Google's model host. It runs
+  on the main thread, with the heavy mask post-processing in a Web Worker.
 - **Explicit FSM** — 3-state machine (`pick-spec | live | preview`) with
   guarded transitions that own all cleanup (camera stop, stream release,
   URL revocation).
 - **Pure-function pipeline** — mask processing (erosion + threshold/feather +
   alpha-composite), geometric crop, and 4R tiling are pure, independently
   unit-tested functions.
-- **Self-hosted nginx** — CSP + HSTS + security headers enforce the privacy
-  promise and harden the deployment.
+- **Self-hosted nginx / Cloudflare Pages** — CSP + HSTS + security headers
+  enforce the privacy promise and harden the deployment.
 
 ## Design record
 

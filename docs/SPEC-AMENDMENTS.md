@@ -86,8 +86,8 @@ Authoritative rationale lives in `docs/adr/`.
 
 | Spec | Amended to | Ref |
 |---|---|---|
-| "All processing in-browser, photos never leave the device" (principle only) | **CSP-enforced**: `connect-src` limited to `'self'` + jsDelivr (wasm/JS) + `storage.googleapis.com` (model file); no analytics/telemetry/error-reporting. Promise is machine-enforced, not verbal. | ADR 0005 |
-| MediaPipe from CDN (unspecified precision) | `script-src` allow `'self'` + `https://cdn.jsdelivr.net`; `connect-src` allow `'self'` + `https://cdn.jsdelivr.net` + `https://storage.googleapis.com` (model file); **`@mediapipe/tasks-vision` version-pinned**; loaded as ESM `FilesetResolver.forVisionTasks` (in Worker, not bundled). `img-src 'self' blob:`; `worker-src 'self' blob:`; `default-src 'none'`. | ADR 0005, — (Q34/Q38) |
+| "All processing in-browser, photos never leave the device" (principle only) | **CSP-enforced**: `connect-src` limited to `'self'` + `storage.googleapis.com` (model file); no analytics/telemetry/error-reporting. Promise is machine-enforced, not verbal. | ADR 0005 |
+| MediaPipe from CDN (unspecified precision) | **Vendored same-origin**: `@mediapipe/tasks-vision@0.10.34` (bundle + wasm) checked into `public/vendor/mediapipe/` and served from `'self'` — module workers cannot cross-origin-`import()` an ESM bundle, and jsDelivr's `vision_bundle.js` path 404s for this version. `script-src 'self' 'wasm-unsafe-eval'` (wasm compile requires it); `connect-src 'self'` + `https://storage.googleapis.com` (model file); loaded as ESM `FilesetResolver.forVisionTasks` on the **main thread** (its wasm loader needs `importScripts`/`document`), with mask post-processing in a Web Worker. `img-src 'self' blob:`; `worker-src 'self' blob:`; `default-src 'none'`. | ADR 0005, — (Q34/Q38) |
 | Hosting unspecified | **Self-hosted nginx** serving static `dist/`, TLS (Let's Encrypt/supplied), tracked `nginx.conf`. | ADR 0008 |
 | (No security headers) | **Full baseline** via nginx header: CSP + HSTS (`includeSubDomains`, **no preload**) + `nosniff` + `Referrer-Policy: no-referrer` + `X-Frame-Options: DENY` + `Permissions-Policy: camera=(self), microphone=(), …`. | ADR 0008 |
 
@@ -95,5 +95,5 @@ Authoritative rationale lives in `docs/adr/`.
 
 | Spec | Amended to | Ref |
 |---|---|---|
-| "Only `@mediapipe/tasks-vision` runtime dep" | Confirmed for runtime (CDN-loaded, not bundled). **Build-time**: Vite + Vitest + **happy-dom** (DOM shim for pure-function tests) + TypeScript. Zero bundled runtime deps. | — (Q36) |
+| "Only `@mediapipe/tasks-vision` runtime dep" | Confirmed for runtime (vendored in `public/vendor/mediapipe`, not bundled into the app bundle). **Build-time**: Vite + Vitest + **happy-dom** (DOM shim for pure-function tests) + TypeScript. Zero bundled runtime deps. | — (Q36) |
 | JPEG DPI (none from canvas) | Hand-rolled JFIF density byte-patch (no new dep), unit-tested. | ADR 0003 |

@@ -36,9 +36,10 @@ security headers must be reflected in both.
 
 Header semantics are preserved unchanged from ADR 0008:
 
-- CSP allow-lists `'self'` + `https://cdn.jsdelivr.net` (MediaPipe JS/wasm) +
-  `https://storage.googleapis.com` (the `.tflite` model) — moving host does
-  not alter which third-party hosts are trusted.
+- CSP allow-lists `'self' 'wasm-unsafe-eval'` (vendored MediaPipe JS/wasm; the
+  wasm compile requires `wasm-unsafe-eval`) + `https://storage.googleapis.com`
+  (the `.tflite` model) — moving host does not alter which third-party hosts
+  are trusted (none besides the model host).
 - HSTS without `preload` (domain stays portable, per ADR 0008).
 - `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`,
   `X-Content-Type-Options: nosniff`, and the `Permissions-Policy`

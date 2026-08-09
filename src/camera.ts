@@ -22,6 +22,7 @@ function getConstraints(facing: "user" | "environment"): MediaStreamConstraints 
  */
 export function createVideoElement(): HTMLVideoElement {
   const video = document.createElement("video");
+  video.setAttribute("id", "video");
   video.setAttribute("playsinline", "");
   video.setAttribute("muted", "");
   video.setAttribute("autoplay", "");
