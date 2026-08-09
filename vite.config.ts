@@ -2,6 +2,7 @@
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
+  plugins: [],
   build: {
     outDir: "dist",
     assetsInlineLimit: 0,
